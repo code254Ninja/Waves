@@ -27,13 +27,96 @@ app.use(bodyParser.urlencoded({extended:true}));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-//Users routes
+
 //models
 const { User } = require('./models/user');
+const { Brand } = require('./models/brand');
+const { Wood } = require('./models/wood');
+const { Product } = require('./models/product');
+
 
 //middlewares
 const { auth } =require('./middleware/auth');
+const { admin } =require('./middleware/admin');
 
+
+//PRODUCTS ROUTES
+app.post('/api/product/article', (req,res)=>{
+    const product = new Product(req.body);
+    product.save((err,doc)=>{
+        if(err) return res.json({success:false,err});
+        res.status(200).json({
+            success:true,
+            product:doc
+        })
+    })
+})
+
+
+//PRODUCTBYID
+
+app.get('/api/product/article_by_id',(req,res)=>{
+    let type = req.query.type;
+    let items = req.query.id;
+
+    if(type == "array"){
+        let ids = req.query.id.split(',');
+        items = [];
+        items = ids.map(item=>{
+            return mongoose.Types.ObjectId(item)
+        })
+    }
+
+    Product.
+    find({'_id':{$in:items}}).
+    exec((err,docs)=>{
+        return res.status(200).send(docs);
+        
+    })
+})
+
+//WOODS ROUTES
+app.post('/api/product/wood',auth,admin,(req,res)=>{
+    const wood = new Wood(req.body);
+
+    wood.save((err,doc)=>{
+        if(err) return res.json({success:false, err})
+        res.status(200).json({
+            success:true,
+            wood:doc
+        })
+    })
+})
+
+app.get('/api/product/woods',(req,res)=>{
+    Wood.find({},(err,woods)=>{
+        if(err) return res.status(400).send(err);
+        res.status(200).send(woods);
+    })
+})
+
+//BRANDS ROUTE
+app.post('/api/product/brand',auth,admin,(req,res)=>{
+    const brand = new Brand(req.body);
+
+    brand.save((err,doc)=>{
+        if(err) return res.json({success:false,err})
+        res.status(200).json({
+            success:true,
+            brand:doc
+        })
+    })
+})
+
+app.get('/api/product/brands', (req,res)=>{
+    Brand.find({},(err,brands)=>{
+        if(err) return res.status(400).send(err);
+        res.status(200).send(brands);
+    })
+})
+
+
+//USERS ROUTE
 app.get('/api/users/auth', auth, (req,res)=>{
     res.status(200).json({
         isAdmin: req.user.role === 0 ? false : true ,
